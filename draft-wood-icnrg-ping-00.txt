@@ -1,0 +1,280 @@
+
+
+
+
+ICNRG Working Group
+Internet-Draft                                                     Cisco
+Intended status: Informational
+Expires: January 22, 2017                                     PARC, Inc.
+                                                           July 21, 2016
+
+
+                               CCNx Ping
+                        draft-wood-icnrg-ping-00
+
+Abstract
+
+   This document describes the design of a CCNx Ping protocol based on
+   control messages.  It includes the protocol design, mechanics, and
+   message encoding details.
+
+Status of This Memo
+
+   This Internet-Draft is submitted in full conformance with the
+   provisions of BCP 78 and BCP 79.
+
+   Internet-Drafts are working documents of the Internet Engineering
+   Task Force (IETF).  Note that other groups may also distribute
+   working documents as Internet-Drafts.  The list of current Internet-
+   Drafts is at http://datatracker.ietf.org/drafts/current/.
+
+   Internet-Drafts are draft documents valid for a maximum of six months
+   and may be updated, replaced, or obsoleted by other documents at any
+   time.  It is inappropriate to use Internet-Drafts as reference
+   material or to cite them other than as "work in progress."
+
+   This Internet-Draft will expire on January 22, 2017.
+
+Copyright Notice
+
+   Copyright (c) 2016 IETF Trust and the persons identified as the
+   document authors.  All rights reserved.
+
+   This document is subject to BCP 78 and the IETF Trust's Legal
+   Provisions Relating to IETF Documents
+   (http://trustee.ietf.org/license-info) in effect on the date of
+   publication of this document.  Please review these documents
+   carefully, as they describe your rights and restrictions with respect
+   to this document.  Code Components extracted from this document must
+   include Simplified BSD License text as described in Section 4.e of
+   the Trust Legal Provisions and are provided without warranty as
+   described in the Simplified BSD License.
+
+
+
+
+                        Expires January 22, 2017                [Page 1]
+
+Internet-Draft                  CCNxPing                       July 2016
+
+
+Table of Contents
+
+   1.  Introduction  . . . . . . . . . . . . . . . . . . . . . . . .   2
+   2.  Assumptions . . . . . . . . . . . . . . . . . . . . . . . . .   2
+   3.  Protocol Design . . . . . . . . . . . . . . . . . . . . . . .   3
+     3.1.  Protocol  . . . . . . . . . . . . . . . . . . . . . . . .   3
+     3.2.  Message Format  . . . . . . . . . . . . . . . . . . . . .   4
+     3.3.  Client Behavior . . . . . . . . . . . . . . . . . . . . .   4
+   4.  Security Considerations . . . . . . . . . . . . . . . . . . .   5
+   5.  Normative References  . . . . . . . . . . . . . . . . . . . .   5
+   Authors' Addresses  . . . . . . . . . . . . . . . . . . . . . . .   5
+
+1.  Introduction
+
+   Regardless of the deployment strategy and ecosystem, network
+   management and diagnostic tools will be essential for CCNx.  One
+   seemingly necessary feature for CCNx network management is the
+   ability to determine whether a device such as a router or end-host,
+   which happens to be responsible for a specific name, is reachable.
+   In IP networks, the ping utility fulfills this purpose.  We therefore
+   need an analogous tool for CCNx networks.
+
+   Unlike the IP ping, however, a CCNx ping tool would not require names
+   to be topological.  The only requirement is that (a) they are
+   routable and (b) match a configured name of some device.  For
+   example, assume a router is configured with the device name /a/b/c.
+   One could ping the device with the name /a/b/c and receive a result.
+   In contrast, a ping request to /a/b or /a/b/c/d would not solicit a
+   response from this device.
+
+   As a network management tool, ping must not induce any security
+   problems in the network.  Therefore, ping responses need not be
+   signed or verified.  (Though a device may choose to do so if the
+   resources are available.)  As
+
+2.  Assumptions
+
+   This document makes the following assumptions.
+
+   o  Devices (routers, end-hosts, etc.) are configured with names for
+      which they are responsible.  For example, a router may be
+      configured with the name /app/name/foo and /org/company/router0.
+      Both are valid.
+
+   o  Ping names must be routable.  Beyond this, we make no additional
+      assumptions.
+
+
+
+
+
+                        Expires January 22, 2017                [Page 2]
+
+Internet-Draft                  CCNxPing                       July 2016
+
+
+3.  Protocol Design
+
+   The CCNx ping design is simple: clients send ping requests for a
+   particular name, hereafter called the _target name_, in hopes of
+   receiving a reply to know that it is reachable.  Moreover, this basic
+   functionality should be possible to execute in an application or "in-
+   band".  Specifically, ping is not an application-layer protocol,
+   though it may be used by applications.  As a "network-layer"
+   protocol, this means that if a forwarder would forward an interest to
+   a local application, then ping requests with the _same name_ are
+   served by that forwarder; They are not punted to the application.
+
+   To satisfy these goals, we imposed the following mechanical
+   constraints.
+
+   o  Ping requests should not result in PIT aggregation.
+
+   o  Ping responses are not cached.  - Ping is not bidirectional.
+
+   o  Forwarders must be able to quickly identify ping messages
+      (requests and responses) and apply local control strategies, e.g.,
+      filtering, off-path processing, or suppression.
+
+3.1.  Protocol
+
+   The ping protocol is simple and works as follows.  Let N be the
+   target name of a single ping request.  Let C be the client generating
+   and consuming the ping request and response.
+
+   o  C generates a random nonce r, appends this nonce to N to create
+      N', and sends a ping request for N'.
+
+   o  Upon receipt of a ping request with name N, modulo the nonce, a
+      router performs the following:
+
+      *  If N exactly matches one of the configured names, then generate
+         a ping response.
+
+      *  Otherwise, if N is longer than all of the configured names,
+         forward the request using the local interest forwarding
+         strategy.
+
+      *  Otherwise, if N is shorter than all of the configured names,
+         drop the request.
+
+   Similar to interests, ping requests leave PIT state so that the
+   responses can be appropriately forwarded downstream to C.
+
+
+
+
+                        Expires January 22, 2017                [Page 3]
+
+Internet-Draft                  CCNxPing                       July 2016
+
+
+   As a technical matter, the target of the ping is free to provide any
+   of the following information in the ping response:
+
+   o  A signature and associated validation information.
+
+   o  A timestamp indicating when the response was generated.
+
+3.2.  Message Format
+
+   To allow for easy identification of ping messages, as well as other
+   future network management protocol messages, we introduce the
+   following packet types to use for encoding ping messages:
+
+   o  PT_CTL_REQUEST: a request control packet.
+
+   o  PT_CTL_RESPONSE: a response control packet.
+
+   Within the packet, different control protocols are de-multiplexed
+   using the message type.  For ping, the following message types are
+   used:
+
+   o  T_PING_REQUEST: a ping request message
+
+   o  T_PING_RESPONSE: a ping response message.
+
+   Each ping message must contain a T_NAME field, which identifies the
+   target name of the request and response.  This name value is used for
+   (a) carrying the target name and (b) forwarding the ping request
+   should the name not match one of a device's configured names.
+   Additionally, ping responses may also contain the following fields in
+   the body of the response:
+
+   T_TIMESTAMP: a new TLV that holds an 8-byte absolute timestamp.
+   (TODO: this is encoded the same as the T_RECOMMENDED_LIFETIME value
+   in [CCNxMessages].
+
+3.3.  Client Behavior
+
+   Let T_1 and T_3 be these timestamps, respectively, and let T_2 be the
+   optional response timestamp contained in a ping response.  Upon
+   receipt of a ping response, the client performs the following
+   calculations:
+
+   "RTT = T_3 - T_1 UpstreamDelay = T_2 - T_1 DownstreamDelay = T_3 -
+   T_2 "
+
+   These values can be used by the client however needed.
+
+
+
+
+                        Expires January 22, 2017                [Page 4]
+
+Internet-Draft                  CCNxPing                       July 2016
+
+
+4.  Security Considerations
+
+   Ping responses should only be signed if the target can afford to do
+   so.  Mandatory signatures could be used as a trivial form of DoS.
+   Also, consumers are recommended, though not required, to authenticate
+   ping responses.
+
+5.  Normative References
+
+   [CCNxMessages]
+              PARC, ., LinkedIn, ., and . PARC, "CCNx Messages in TLV
+              Format", n.d., <https://datatracker.ietf.org/doc/draft-
+              irtf-icnrg-ccnxmessages/>.
+
+Authors' Addresses
+
+   Mark Stapp
+   Cisco
+
+   Email: mjs@cisco.com
+
+
+   Christopher A. Wood
+   PARC, Inc.
+
+   Email: christopher.wood@parc.com
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                        Expires January 22, 2017                [Page 5]

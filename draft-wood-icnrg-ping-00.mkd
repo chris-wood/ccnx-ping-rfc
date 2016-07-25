@@ -1,0 +1,162 @@
+---
+title: CCNx Ping
+abbrev: CCNx Ping
+docname: draft-wood-icnrg-ping-00
+date: 2016-7-22
+category: info
+
+ipr: trust200902
+area: General
+workgroup: ICNRG Working Group
+keyword: Internet-Draft
+
+stand_alone: yes
+pi: [toc, sortrefs, symrefs]
+
+author:
+ -
+    name: Mark Stapp
+    organization: Cisco
+    email: mjs@cisco.com
+ -
+    name: Christopher A. Wood
+    organization: PARC, Inc.
+    email: christopher.wood@parc.com
+
+normative:
+    CCNxMessages:
+        target: https://datatracker.ietf.org/doc/draft-irtf-icnrg-ccnxmessages/
+        title: CCNx Messages in TLV Format
+        author:
+            -
+                org: Marc Mosko
+                ins: PARC
+            -
+                org: Ignacio Solis
+                ins: LinkedIn
+            -
+                org: Christopher Wood
+                ins: PARC
+
+--- abstract
+
+This document describes the design of a CCNx Ping protocol based on control
+messages. It includes the protocol design, mechanics, and message encoding 
+details. 
+
+--- middle
+
+# Introduction
+
+Regardless of the deployment strategy and ecosystem, network management and 
+diagnostic tools will be essential for CCNx. One seemingly necessary feature
+for CCNx network management is the ability to determine whether a device such
+as a router or end-host, which happens to be responsible for a specific name, 
+is reachable. In IP networks, the ping utility fulfills this purpose. We therefore 
+need an analogous tool for CCNx networks. 
+
+Unlike the IP ping, however, a CCNx ping tool would not require names to be topological. 
+The only requirement is that (a) they are routable and (b) match a configured name of 
+some device. For example, assume a router is configured with the device name /a/b/c. 
+One could ping the device with the name /a/b/c and receive a result. In contrast, a ping 
+request to /a/b or /a/b/c/d would not solicit a response from this device. 
+
+As a network management tool, ping must not induce any security problems in the network. 
+Therefore, ping responses need not be signed or verified. (Though a device may choose
+to do so if the resources are available.) As
+
+# Assumptions
+
+This document makes the following assumptions.
+
+- Devices (routers, end-hosts, etc.) are configured with names for which they are responsible. 
+ For example, a router may be configured with the name /app/name/foo and /org/company/router0.
+ Both are valid. 
+
+- Ping names must be routable. Beyond this, we make no additional assumptions.
+
+# Protocol Design
+
+The CCNx ping design is simple: clients send ping requests for a particular name, hereafter
+called the *target name*, in hopes of receiving a reply to know that it is reachable. 
+Moreover, this basic functionality should be possible to execute in an application or "in-band".
+Specifically, ping is not an application-layer protocol, though it may be used by applications.
+As a "network-layer" protocol, this means that if a forwarder would forward an interest to a local
+application, then ping requests with the *same name* are served by that forwarder; They are not
+punted to the application.
+
+To satisfy these goals, we imposed the following mechanical constraints. 
+
+- Ping requests should not result in PIT aggregation.
+- Ping responses are not cached.
+– Ping is not bidirectional.
+- Forwarders must be able to quickly identify ping messages (requests and responses) and apply
+ local control strategies, e.g., filtering, off-path processing, or suppression.
+
+## Protocol
+
+The ping protocol is simple and works as follows. Let N be the target name of 
+a single ping request. Let C be the client generating and consuming the ping request
+and response. 
+
+- C generates a random nonce r, appends this nonce to N to create N', and sends a ping request for N'.
+- Upon receipt of a ping request with name N, modulo the nonce, a router performs the following:
+    - If N exactly matches one of the configured names, then generate a ping response. 
+    - Otherwise, if N is longer than all of the configured names, forward the request using
+    the local interest forwarding strategy.
+    - Otherwise, if N is shorter than all of the configured names, drop the request.
+
+Similar to interests, ping requests leave PIT state so that the responses can be appropriately forwarded
+downstream to C.
+
+As a technical matter, the target of the ping is free to provide any of the following information
+in the ping response:
+
+- A signature and associated validation information.
+- A timestamp indicating when the response was generated.
+
+## Message Format
+
+To allow for easy identification of ping messages, as well as other future network
+management protocol messages, we introduce the following packet types to use for
+encoding ping messages:
+
+- PT_CTL_REQUEST: a request control packet.
+- PT_CTL_RESPONSE: a response control packet.
+
+Within the packet, different control protocols are de-multiplexed using the message
+type. For ping, the following message types are used:
+
+- T_PING_REQUEST: a ping request message
+- T_PING_RESPONSE: a ping response message.
+
+Each ping message must contain a T_NAME field, which identifies the target name of the
+request and response. This name value is used for (a) carrying the target name and (b)
+forwarding the ping request should the name not match one of a device's configured names.
+Additionally, ping responses may also contain the following fields
+in the body of the response:
+
+T_TIMESTAMP: a new TLV that holds an 8-byte absolute timestamp. (TODO: this is
+encoded the same as the T_RECOMMENDED_LIFETIME value in {{CCNxMessages}}. 
+
+## Client Behavior
+
+Let T_1 and T_3 be these timestamps, respectively, and let T_2 be the optional response 
+timestamp contained in a ping response. Upon receipt of a ping response, the
+client performs the following calculations:
+
+```
+RTT = T_3 - T_1
+UpstreamDelay = T_2 - T_1
+DownstreamDelay = T_3 - T_2
+```
+
+These values can be used by the client however needed.
+
+# Security Considerations
+
+Ping responses should only be signed if the target can afford to do so. Mandatory signatures
+could be used as a trivial form of DoS. Also, consumers are recommended, though not required,
+to authenticate ping responses. 
+
+--- back

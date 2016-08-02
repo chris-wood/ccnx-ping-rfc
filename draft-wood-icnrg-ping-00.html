@@ -390,7 +390,7 @@
 
   <meta name="dct.creator" content="Cisco and PARC, Inc." />
   <meta name="dct.identifier" content="urn:ietf:id:draft-wood-icnrg-ping-00" />
-  <meta name="dct.issued" scheme="ISO8601" content="2016-7-21" />
+  <meta name="dct.issued" scheme="ISO8601" content="2016-7-22" />
   <meta name="dct.abstract" content="This document describes the design of a CCNx Ping protocol based on control messages. It includes the protocol design, mechanics, and message encoding details." />
   <meta name="description" content="This document describes the design of a CCNx Ping protocol based on control messages. It includes the protocol design, mechanics, and message encoding details." />
 
@@ -414,12 +414,12 @@
   <td class="right"></td>
 </tr>
 <tr>
-  <td class="left">Expires: January 22, 2017</td>
+  <td class="left">Expires: January 23, 2017</td>
   <td class="right">PARC, Inc.</td>
 </tr>
 <tr>
   <td class="left"></td>
-  <td class="right">July 21, 2016</td>
+  <td class="right">July 22, 2016</td>
 </tr>
 
     	
@@ -439,7 +439,7 @@
 <p>This Internet-Draft is submitted in full conformance with the provisions of BCP 78 and BCP 79.</p>
 <p>Internet-Drafts are working documents of the Internet Engineering Task Force (IETF).  Note that other groups may also distribute working documents as Internet-Drafts.  The list of current Internet-Drafts is at http://datatracker.ietf.org/drafts/current/.</p>
 <p>Internet-Drafts are draft documents valid for a maximum of six months and may be updated, replaced, or obsoleted by other documents at any time.  It is inappropriate to use Internet-Drafts as reference material or to cite them other than as "work in progress."</p>
-<p>This Internet-Draft will expire on January 22, 2017.</p>
+<p>This Internet-Draft will expire on January 23, 2017.</p>
 <h1 id="rfc.copyrightnotice">
   <a href="#rfc.copyrightnotice">Copyright Notice</a>
 </h1>
@@ -501,6 +501,8 @@
 <ul>
   <li>A signature and associated validation information.</li>
   <li>A timestamp indicating when the response was generated.</li>
+  <li>An authoritative name of the target that provided the response.</li>
+  <li>An interface identifier corresponding to the link on which the target received the request.</li>
 </ul>
 <h1 id="rfc.section.3.2"><a href="#rfc.section.3.2">3.2.</a> <a href="#message-format" id="message-format">Message Format</a></h1>
 <p id="rfc.section.3.2.p.1">To allow for easy identification of ping messages, as well as other future network management protocol messages, we introduce the following packet types to use for encoding ping messages:</p>
@@ -525,6 +527,7 @@
   <samp>RTT = T_3 - T_1 UpstreamDelay = T_2 - T_1 DownstreamDelay = T_3 - T_2 </samp>
 </p>
 <p id="rfc.section.3.3.p.3">These values can be used by the client however needed.</p>
+<p id="rfc.section.3.3.p.4">Similar to NTP <a href="#RFC1305">[RFC1305]</a>, a fourth timestamp could be added to differentiate between the target receive and target send times. If supported, the target may supply this additional timestamp to aid client-side computation.</p>
 <h1 id="rfc.section.4"><a href="#rfc.section.4">4.</a> <a href="#security-considerations" id="security-considerations">Security Considerations</a></h1>
 <p id="rfc.section.4.p.1">Ping responses should only be signed if the target can afford to do so. Mandatory signatures could be used as a trivial form of DoS. Also, consumers are recommended, though not required, to authenticate ping responses.</p>
 <h1 id="rfc.references"><a href="#rfc.references">5.</a> Normative References</h1>
@@ -535,6 +538,12 @@
         <b id="CCNxMessages">[CCNxMessages]</b>
       </td>
       <td class="top"><a title="Marc Mosko">PARC, .</a>, <a title="Ignacio Solis">LinkedIn, .</a> and <a title="Christopher Wood">. PARC</a>, "<a href="https://datatracker.ietf.org/doc/draft-irtf-icnrg-ccnxmessages/">CCNx Messages in TLV Format</a>", n.d..</td>
+    </tr>
+    <tr>
+      <td class="reference">
+        <b id="RFC1305">[RFC1305]</b>
+      </td>
+      <td class="top"><a>Mills, D.</a>, "<a href="http://tools.ietf.org/html/rfc1305">Network Time Protocol (Version 3) Specification, Implementation and Analysis</a>", RFC 1305, DOI 10.17487/RFC1305, March 1992.</td>
     </tr>
   </tbody>
 </table>

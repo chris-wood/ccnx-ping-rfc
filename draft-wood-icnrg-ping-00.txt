@@ -5,8 +5,8 @@
 ICNRG Working Group
 Internet-Draft                                                     Cisco
 Intended status: Informational
-Expires: January 22, 2017                                     PARC, Inc.
-                                                           July 21, 2016
+Expires: January 23, 2017                                     PARC, Inc.
+                                                           July 22, 2016
 
 
                                CCNx Ping
@@ -33,7 +33,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on January 22, 2017.
+   This Internet-Draft will expire on January 23, 2017.
 
 Copyright Notice
 
@@ -53,9 +53,9 @@ Copyright Notice
 
 
 
-                        Expires January 22, 2017                [Page 1]
+                        Expires January 23, 2017                [Page 1]
 
-Internet-Draft                  CCNxPing                       July 2016
+Internet-Draft                  CCNx Ping                      July 2016
 
 
 Table of Contents
@@ -109,9 +109,9 @@ Table of Contents
 
 
 
-                        Expires January 22, 2017                [Page 2]
+                        Expires January 23, 2017                [Page 2]
 
-Internet-Draft                  CCNxPing                       July 2016
+Internet-Draft                  CCNx Ping                      July 2016
 
 
 3.  Protocol Design
@@ -165,9 +165,9 @@ Internet-Draft                  CCNxPing                       July 2016
 
 
 
-                        Expires January 22, 2017                [Page 3]
+                        Expires January 23, 2017                [Page 3]
 
-Internet-Draft                  CCNxPing                       July 2016
+Internet-Draft                  CCNx Ping                      July 2016
 
 
    As a technical matter, the target of the ping is free to provide any
@@ -176,6 +176,11 @@ Internet-Draft                  CCNxPing                       July 2016
    o  A signature and associated validation information.
 
    o  A timestamp indicating when the response was generated.
+
+   o  An authoritative name of the target that provided the response.
+
+   o  An interface identifier corresponding to the link on which the
+      target received the request.
 
 3.2.  Message Format
 
@@ -213,18 +218,23 @@ Internet-Draft                  CCNxPing                       July 2016
    receipt of a ping response, the client performs the following
    calculations:
 
+
+
+
+                        Expires January 23, 2017                [Page 4]
+
+Internet-Draft                  CCNx Ping                      July 2016
+
+
    "RTT = T_3 - T_1 UpstreamDelay = T_2 - T_1 DownstreamDelay = T_3 -
    T_2 "
 
    These values can be used by the client however needed.
 
-
-
-
-                        Expires January 22, 2017                [Page 4]
-
-Internet-Draft                  CCNxPing                       July 2016
-
+   Similar to NTP [RFC1305], a fourth timestamp could be added to
+   differentiate between the target receive and target send times.  If
+   supported, the target may supply this additional timestamp to aid
+   client-side computation.
 
 4.  Security Considerations
 
@@ -239,6 +249,11 @@ Internet-Draft                  CCNxPing                       July 2016
               PARC, ., LinkedIn, ., and . PARC, "CCNx Messages in TLV
               Format", n.d., <https://datatracker.ietf.org/doc/draft-
               irtf-icnrg-ccnxmessages/>.
+
+   [RFC1305]  Mills, D., "Network Time Protocol (Version 3)
+              Specification, Implementation and Analysis", RFC 1305,
+              DOI 10.17487/RFC1305, March 1992,
+              <http://www.rfc-editor.org/info/rfc1305>.
 
 Authors' Addresses
 
@@ -262,19 +277,4 @@ Authors' Addresses
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-                        Expires January 22, 2017                [Page 5]
+                        Expires January 23, 2017                [Page 5]

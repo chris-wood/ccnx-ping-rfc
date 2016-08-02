@@ -24,6 +24,7 @@ author:
     email: christopher.wood@parc.com
 
 normative:
+    RFC1305:
     CCNxMessages:
         target: https://datatracker.ietf.org/doc/draft-irtf-icnrg-ccnxmessages/
         title: CCNx Messages in TLV Format
@@ -114,6 +115,8 @@ in the ping response:
 
 - A signature and associated validation information.
 - A timestamp indicating when the response was generated.
+- An authoritative name of the target that provided the response.
+- An interface identifier corresponding to the link on which the target received the request.
 
 ## Message Format
 
@@ -152,6 +155,10 @@ DownstreamDelay = T_3 - T_2
 ```
 
 These values can be used by the client however needed.
+
+Similar to NTP {{RFC1305}}, a fourth timestamp could be added to differentiate between the 
+target receive and target send times. If supported, the target may supply this additional
+timestamp to aid client-side computation. 
 
 # Security Considerations
 

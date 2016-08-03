@@ -65,7 +65,7 @@ Table of Contents
    3.  Protocol Design . . . . . . . . . . . . . . . . . . . . . . .   3
      3.1.  Protocol  . . . . . . . . . . . . . . . . . . . . . . . .   3
      3.2.  Message Format  . . . . . . . . . . . . . . . . . . . . .   4
-     3.3.  Client Behavior . . . . . . . . . . . . . . . . . . . . .   4
+     3.3.  Client Behavior . . . . . . . . . . . . . . . . . . . . .   5
    4.  Security Considerations . . . . . . . . . . . . . . . . . . .   5
    5.  Normative References  . . . . . . . . . . . . . . . . . . . .   5
    Authors' Addresses  . . . . . . . . . . . . . . . . . . . . . . .   5
@@ -129,15 +129,21 @@ Internet-Draft                  CCNx Ping                      July 2016
    To satisfy these goals, we imposed the following mechanical
    constraints.
 
-   o  Ping requests should not result in PIT aggregation.
+   o  Ping requests should not result in PIT aggregation since they are
+      independent of an interest with the same name.
 
-   o  Ping responses are not cached.  - Ping is not bidirectional.
+   o  Ping responses are not cached.
+
+   o  Ping is not bidirectional.
 
    o  Forwarders must be able to quickly identify ping messages
       (requests and responses) and apply local control strategies, e.g.,
       filtering, off-path processing, or suppression.
 
 3.1.  Protocol
+
+   - no two N's are prefixes of one another - match rule: configured
+   name is a prefix of N'
 
    The ping protocol is simple and works as follows.  Let N be the
    target name of a single ping request.  Let C be the client generating
@@ -152,15 +158,9 @@ Internet-Draft                  CCNx Ping                      July 2016
       *  If N exactly matches one of the configured names, then generate
          a ping response.
 
-      *  Otherwise, if N is longer than all of the configured names,
-         forward the request using the local interest forwarding
-         strategy.
+      *  Otherwise, give the request to the forwarding engine for
+         processing.
 
-      *  Otherwise, if N is shorter than all of the configured names,
-         drop the request.
-
-   Similar to interests, ping requests leave PIT state so that the
-   responses can be appropriately forwarded downstream to C.
 
 
 
@@ -169,6 +169,9 @@ Internet-Draft                  CCNx Ping                      July 2016
 
 Internet-Draft                  CCNx Ping                      July 2016
 
+
+   Similar to interests, ping requests leave PIT state so that the
+   responses can be appropriately forwarded downstream to C.
 
    As a technical matter, the target of the ping is free to provide any
    of the following information in the ping response:
@@ -211,12 +214,9 @@ Internet-Draft                  CCNx Ping                      July 2016
    (TODO: this is encoded the same as the T_RECOMMENDED_LIFETIME value
    in [CCNxMessages].
 
-3.3.  Client Behavior
 
-   Let T_1 and T_3 be these timestamps, respectively, and let T_2 be the
-   optional response timestamp contained in a ping response.  Upon
-   receipt of a ping response, the client performs the following
-   calculations:
+
+
 
 
 
@@ -226,15 +226,12 @@ Internet-Draft                  CCNx Ping                      July 2016
 Internet-Draft                  CCNx Ping                      July 2016
 
 
-   "RTT = T_3 - T_1 UpstreamDelay = T_2 - T_1 DownstreamDelay = T_3 -
-   T_2 "
+3.3.  Client Behavior
 
-   These values can be used by the client however needed.
-
-   Similar to NTP [RFC1305], a fourth timestamp could be added to
-   differentiate between the target receive and target send times.  If
-   supported, the target may supply this additional timestamp to aid
-   client-side computation.
+   Let T_1 and T_3 be the send and receive timestamps, respectively.
+   Upon receipt of a ping response, the client can compute the RTT as
+   T_3 - T_1.  Any additional contents in the ping response can be used
+   as desired, e.g., printed to the terminal.
 
 4.  Security Considerations
 
@@ -267,6 +264,9 @@ Authors' Addresses
    PARC, Inc.
 
    Email: christopher.wood@parc.com
+
+
+
 
 
 

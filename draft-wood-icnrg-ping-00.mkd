@@ -88,13 +88,17 @@ punted to the application.
 
 To satisfy these goals, we imposed the following mechanical constraints. 
 
-- Ping requests should not result in PIT aggregation.
+- Ping requests should not result in PIT aggregation since they are independent of
+an interest with the same name.
 - Ping responses are not cached.
-– Ping is not bidirectional.
+- Ping is not bidirectional.
 - Forwarders must be able to quickly identify ping messages (requests and responses) and apply
  local control strategies, e.g., filtering, off-path processing, or suppression.
 
 ## Protocol
+
+-- no two N's are prefixes of one another
+-- match rule: configured name is a prefix of N'
 
 The ping protocol is simple and works as follows. Let N be the target name of 
 a single ping request. Let C be the client generating and consuming the ping request
@@ -103,9 +107,7 @@ and response.
 - C generates a random nonce r, appends this nonce to N to create N', and sends a ping request for N'.
 - Upon receipt of a ping request with name N, modulo the nonce, a router performs the following:
     - If N exactly matches one of the configured names, then generate a ping response. 
-    - Otherwise, if N is longer than all of the configured names, forward the request using
-    the local interest forwarding strategy.
-    - Otherwise, if N is shorter than all of the configured names, drop the request.
+    - Otherwise, give the request to the forwarding engine for processing.
 
 Similar to interests, ping requests leave PIT state so that the responses can be appropriately forwarded
 downstream to C.
@@ -144,21 +146,10 @@ encoded the same as the T_RECOMMENDED_LIFETIME value in {{CCNxMessages}}.
 
 ## Client Behavior
 
-Let T_1 and T_3 be these timestamps, respectively, and let T_2 be the optional response 
-timestamp contained in a ping response. Upon receipt of a ping response, the
-client performs the following calculations:
-
-```
-RTT = T_3 - T_1
-UpstreamDelay = T_2 - T_1
-DownstreamDelay = T_3 - T_2
-```
-
-These values can be used by the client however needed.
-
-Similar to NTP {{RFC1305}}, a fourth timestamp could be added to differentiate between the 
-target receive and target send times. If supported, the target may supply this additional
-timestamp to aid client-side computation. 
+Let T_1 and T_3 be the send and receive timestamps, respectively. 
+Upon receipt of a ping response, the client can compute the RTT
+as T_3 - T_1. Any additional contents in the ping response can be
+used as desired, e.g., printed to the terminal.
 
 # Security Considerations
 
